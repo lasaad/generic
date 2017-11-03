@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using System.Web.Configuration;
 
 namespace Generic.Controllers
 {
@@ -15,14 +16,17 @@ namespace Generic.Controllers
 
         public ActionResult About()
         {
-            ViewBag.Message = "Your application description page.";
-
             return View();
         }
 
         public ActionResult Contact()
         {
-            ViewBag.Message = "Your contact page.";
+            ViewBag.GoogleApiKey = WebConfigurationManager.AppSettings["ApiGoogleKey"];
+            ViewBag.locX = "46.414382";
+            ViewBag.locY = "10.013988";
+            ViewBag.heading = "210";
+            ViewBag.pitch = "10";
+            ViewBag.fov = "35";
 
             return View();
         }
