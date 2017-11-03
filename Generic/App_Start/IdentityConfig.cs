@@ -54,10 +54,10 @@ namespace Generic
             manager.PasswordValidator = new PasswordValidator
             {
                 RequiredLength = 6,
-                RequireNonLetterOrDigit = true,
-                RequireDigit = true,
-                RequireLowercase = true,
-                RequireUppercase = true,
+                RequireNonLetterOrDigit = false,
+                RequireDigit = false,
+                RequireLowercase = false,
+                RequireUppercase = false,
             };
 
             // Configurer les valeurs par défaut du verrouillage de l'utilisateur
@@ -86,6 +86,14 @@ namespace Generic
             }
             return manager;
         }
+
+        public IEnumerable<ApplicationUser> GetAlluser(IOwinContext context)
+        {
+            var manager = new ApplicationUserManager(new UserStore<ApplicationUser>(context.Get<ApplicationDbContext>()));
+
+            return manager.Users.ToList();
+
+        }
     }
 
     // Configurer le gestionnaire de connexion d'application qui est utilisé dans cette application.
@@ -106,4 +114,6 @@ namespace Generic
             return new ApplicationSignInManager(context.GetUserManager<ApplicationUserManager>(), context.Authentication);
         }
     }
+
+
 }

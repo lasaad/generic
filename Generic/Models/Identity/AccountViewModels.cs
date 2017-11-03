@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Generic.Models
 {
@@ -64,6 +65,17 @@ namespace Generic.Models
 
     public class RegisterViewModel
     {
+        [NotMapped]
+        public Crud crud;
+
+        [Required]
+        [Display(Name = "Nom")]
+        public string Nom { get; set; }
+
+        [Required]
+        [Display(Name = "Prénom")]
+        public string Prenom { get; set; }
+
         [Required]
         [EmailAddress]
         [Display(Name = "Courrier électronique")]

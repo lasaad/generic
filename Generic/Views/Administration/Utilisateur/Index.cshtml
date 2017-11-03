@@ -1,0 +1,32 @@
+﻿@model List<Generic.Models.ApplicationUser>
+@using GridMvc.Html
+@{
+    ViewBag.Title = "Utilisateurs";
+}
+
+<h2>Utilisateurs</h2>
+@Html.BeginForm("Register", "Account", FormMethod.Get)
+{
+    <input type="submit" value="Ajouter" />
+}
+@Html.Grid(Model).Columns(columns =>
+{
+    columns.Add(u => u.Nom)
+                .Titled("Utilisateur")
+                .Filterable(true)
+                .Sanitized(false)
+                .Encoded(false)
+                .RenderValueAs(u => Html.ActionLink(u.Nom + " " + u.Prenom, "Details", "Account", new { id = u.Id }, null)
+                .ToHtmlString());
+    columns.Add(u => u.Prenom)
+                .Titled("Action")
+                .Filterable(true)
+                .Sanitized(false)
+                .Encoded(false)
+                .RenderValueAs(u => Html.ActionLink("Supprimer", "Delete", "Account", new { id = u.Id }, null)
+                .ToHtmlString());
+
+}).WithPaging(20)
+
+
+

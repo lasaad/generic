@@ -9,6 +9,8 @@ using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin.Security;
 using Generic.Models;
+using System.Data.Entity;
+using System.Collections.Generic;
 
 namespace Generic.Controllers
 {
@@ -17,6 +19,7 @@ namespace Generic.Controllers
     {
         private ApplicationSignInManager _signInManager;
         private ApplicationUserManager _userManager;
+        private string _viewPath = "../Administration/Utilisateur/";
 
         public AccountController()
         {
@@ -59,6 +62,57 @@ namespace Generic.Controllers
         {
             ViewBag.ReturnUrl = returnUrl;
             return View();
+        }
+
+        /// <summary>
+        /// Affiche l'ensemble des utilisateurs par ordre alphabétique
+        /// </summary>
+        /// <returns></returns>
+        [AllowAnonymous]
+        public ActionResult Index()
+        {
+            var db = new ApplicationDbContext();
+            IEnumerable<ApplicationUser> Users = db.Users
+                .Include(u => u.Roles)
+                .OrderBy(u => u.Nom)
+                .ToList();
+
+            return View(_viewPath + "Index", Users);
+        }
+
+        /// <summary>
+        /// Affiche les détails d'un utilisateur
+        /// </summary>
+        /// <param name="id">id de l'utilisateur</param>
+        /// <returns></returns>
+        [AllowAnonymous]
+        public ActionResult Details(string id)
+        {
+            var db = new ApplicationDbContext();
+            ApplicationUser User = db.Users
+                .Include(u => u.Roles)
+                .Where(u => u.Id.ToString() == id)
+                .FirstOrDefault();
+            
+            return View(_viewPath + "Details", User);
+        }
+
+        /// <summary>
+        /// Supprime un utilisateur
+        /// </summary>
+        /// <param name="id">id de l'utilisateur</param>
+        /// <returns></returns>
+        [AllowAnonymous]
+        public ActionResult Delete(string id)
+        {
+            var db = new ApplicationDbContext();
+            ApplicationUser User = db.Users
+                .Where(u => u.Id.ToString() == id)
+                .FirstOrDefault();
+
+            db.Users.Remove(User);
+            db.SaveChanges();
+            return RedirectToAction("Index");
         }
 
         //
@@ -142,21 +196,70 @@ namespace Generic.Controllers
             return View();
         }
 
-        //
+        /// <summary>
+        /// Crée un nouvau compte puis se connecte dessus
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
         // POST: /Account/Register
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Register(RegisterViewModel model)
+        public async Task<ActionResult> RegisterAndLoginIn(RegisterViewModel model)
         {
             if (ModelState.IsValid)
             {
-                var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
+                var user = new ApplicationUser {
+                    UserName = model.Email,
+                    Email = model.Email,
+                    Prenom = model.Prenom,
+                    Nom = model.Nom };
+
                 var result = await UserManager.CreateAsync(user, model.Password);
                 if (result.Succeeded)
                 {
                     await SignInManager.SignInAsync(user, isPersistent:false, rememberBrowser:false);
                     
+                    // For more information on how to enable account confirmation and password reset please visit https://go.microsoft.com/fwlink/?LinkID=320771
+                    // Envoyer un message électronique avec ce lien
+                    // string code = await UserManager.GenerateEmailConfirmationTokenAsync(user.Id);
+                    // var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
+                    // await UserManager.SendEmailAsync(user.Id, "Confirmez votre compte", "Confirmez votre compte en cliquant <a href=\"" + callbackUrl + "\">ici</a>");
+
+                    return RedirectToAction("Index", "Home");
+                }
+                AddErrors(result);
+            }
+
+            // Si nous sommes arrivés là, un échec s’est produit. Réafficher le formulaire
+            return View(model);
+        }
+        /// <summary>
+        /// Crée un nouveau compte sans connexion
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        // POST: /Account/Register
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> RegisterOnly(RegisterViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = new ApplicationUser
+                {
+                    UserName = model.Email,
+                    Email = model.Email,
+                    Prenom = model.Prenom,
+                    Nom = model.Nom
+                };
+
+                var result = await UserManager.CreateAsync(user, model.Password);
+                if (result.Succeeded)
+                {
+                    // await SignInManager.SignInAsync(user, isPersistent: false, rememberBrowser: false);
+
                     // For more information on how to enable account confirmation and password reset please visit https://go.microsoft.com/fwlink/?LinkID=320771
                     // Envoyer un message électronique avec ce lien
                     // string code = await UserManager.GenerateEmailConfirmationTokenAsync(user.Id);
@@ -211,10 +314,10 @@ namespace Generic.Controllers
 
                 // For more information on how to enable account confirmation and password reset please visit https://go.microsoft.com/fwlink/?LinkID=320771
                 // Envoyer un message électronique avec ce lien
-                // string code = await UserManager.GeneratePasswordResetTokenAsync(user.Id);
-                // var callbackUrl = Url.Action("ResetPassword", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);		
-                // await UserManager.SendEmailAsync(user.Id, "Réinitialiser le mot de passe", "Réinitialisez votre mot de passe en cliquant <a href=\"" + callbackUrl + "\">ici</a>");
-                // return RedirectToAction("ForgotPasswordConfirmation", "Account");
+                string code = await UserManager.GeneratePasswordResetTokenAsync(user.Id);
+                var callbackUrl = Url.Action("ResetPassword", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
+                await UserManager.SendEmailAsync(user.Id, "Réinitialiser le mot de passe", "Réinitialisez votre mot de passe en cliquant <a href=\"" + callbackUrl + "\">ici</a>");
+                return RedirectToAction("ForgotPasswordConfirmation", "Account");
             }
 
             // Si nous sommes arrivés là, un échec s’est produit. Réafficher le formulaire
